@@ -16,6 +16,10 @@ export class Game {
   private isRunning: boolean;
   private selectedBlock: Vec3 | null = null;
 
+  /**
+   * Initializes the game engine with all required components
+   * Sets up renderer, world generation, player controls, and camera
+   */
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.renderer = new Renderer(canvas);
@@ -39,6 +43,10 @@ export class Game {
     this.handleInteraction();
   }
 
+  /**
+   * Sets up canvas resizing to maintain full window coverage
+   * Updates camera aspect ratio when window is resized
+   */
   private setupCanvas(): void {
     const resizeCanvas = () => {
       this.canvas.width = window.innerWidth;
@@ -51,6 +59,10 @@ export class Game {
     window.addEventListener("resize", resizeCanvas);
   }
 
+  /**
+   * Sets up mouse click handlers for block breaking (left click) and block placing (right click)
+   * Uses raycasting to detect which block the player is looking at
+   */
   private handleInteraction(): void {
     this.canvas.addEventListener("click", (e) => {
       if (!this.controls.isPointerLocked()) return;
@@ -96,16 +108,26 @@ export class Game {
     });
   }
 
+  /**
+   * Starts the game loop and generates initial world chunks around the player
+   */
   start(): void {
     this.isRunning = true;
     this.world.generateAroundPosition(this.player.player.position, RENDER_DISTANCE);
     this.gameLoop();
   }
 
+  /**
+   * Stops the game loop
+   */
   stop(): void {
     this.isRunning = false;
   }
 
+  /**
+   * Main game loop that runs every frame
+   * Updates game state and renders the scene
+   */
   private gameLoop = (): void => {
     if (!this.isRunning) return;
     
@@ -119,6 +141,10 @@ export class Game {
     requestAnimationFrame(this.gameLoop);
   };
 
+  /**
+   * Updates game state each frame
+   * Handles player movement, world generation, and block selection highlighting
+   */
   private update(deltaTime: number): void {
     this.player.update(deltaTime, (pos) => this.world.checkCollision(pos));
     
@@ -138,6 +164,10 @@ export class Game {
     this.selectedBlock = hit ? hit.position : null;
   }
 
+  /**
+   * Renders the current game state to the canvas
+   * Builds chunk meshes if needed and renders all visible chunks
+   */
   private render(): void {
     this.renderer.clear();
     this.renderer.setCamera(this.camera);
@@ -152,10 +182,16 @@ export class Game {
     this.renderer.renderChunks();
   }
 
+  /**
+   * Sets the currently selected block type for placement
+   */
   setSelectedBlock(blockType: BlockType): void {
     this.player.setSelectedBlock(blockType);
   }
 
+  /**
+   * Cleans up all resources when the game is destroyed
+   */
   dispose(): void {
     this.stop();
     this.controls.dispose();

@@ -11,6 +11,9 @@ export class Renderer {
   private blockMesh: BlockMesh;
   private chunkMeshes: Map<string, { vao: WebGLVertexArrayObject; vertexCount: number }>;
 
+  /**
+   * Initializes WebGL2 renderer with shader programs and mesh systems
+   */
   constructor(canvas: HTMLCanvasElement) {
     const gl = canvas.getContext("webgl2");
     if (!gl) {
@@ -27,6 +30,10 @@ export class Renderer {
     this.setupGL();
   }
 
+  /**
+   * Configures WebGL state for 3D rendering
+   * Enables depth testing and back-face culling
+   */
   private setupGL(): void {
     const gl = this.gl;
     
@@ -37,14 +44,24 @@ export class Renderer {
     gl.clearColor(0.53, 0.81, 0.98, 1.0);
   }
 
+  /**
+   * Updates viewport dimensions when canvas is resized
+   */
   resize(width: number, height: number): void {
     this.gl.viewport(0, 0, width, height);
   }
 
+  /**
+   * Clears the color and depth buffers for new frame
+   */
   clear(): void {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
 
+  /**
+   * Updates projection and view matrices from camera settings
+   * Creates perspective projection and look-at view matrix
+   */
   setCamera(camera: Camera): void {
     this.projectionMatrix = Mat4.perspective(
       camera.fov,
@@ -66,6 +83,10 @@ export class Renderer {
     );
   }
 
+  /**
+   * Builds optimized mesh for a chunk by combining visible block faces
+   * Only renders faces that are exposed to air
+   */
   buildChunkMesh(chunk: Chunk): void {
     const chunkKey = `${chunk.position.x},${chunk.position.y},${chunk.position.z}`;
     
@@ -143,6 +164,10 @@ export class Renderer {
     chunk.isDirty = false;
   }
 
+  /**
+   * Adds a single block's visible faces to the chunk mesh
+   * Culls faces that are hidden by adjacent blocks
+   */
   private addBlockToMesh(
     blockType: BlockType,
     worldPos: Vec3,
@@ -185,6 +210,10 @@ export class Renderer {
     });
   }
 
+  /**
+   * Determines if a block face should be rendered
+   * Face is visible if adjacent block is air or at chunk boundary
+   */
   private shouldRenderFace(chunk: Chunk, pos: Vec3, normal: number[]): boolean {
     const nx = pos.x + normal[0];
     const ny = pos.y + normal[1];
@@ -198,6 +227,10 @@ export class Renderer {
     return chunk.blocks[index] === BlockType.AIR;
   }
 
+  /**
+   * Returns UV coordinates for block textures
+   * Currently returns default coordinates for all block types
+   */
   private getTextureCoords(blockType: BlockType): number[][] {
     const coords = [
       [0, 0, 1, 0, 1, 1, 0, 1],
@@ -210,6 +243,10 @@ export class Renderer {
     return coords;
   }
 
+  /**
+   * Renders all chunk meshes with current camera settings
+   * Applies projection, view, and model matrices to shader
+   */
   renderChunks(): void {
     const gl = this.gl;
     
@@ -233,6 +270,9 @@ export class Renderer {
     gl.bindVertexArray(null);
   }
 
+  /**
+   * Cleans up all WebGL resources
+   */
   dispose(): void {
     const gl = this.gl;
     

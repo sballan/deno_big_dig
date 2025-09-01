@@ -7,6 +7,9 @@ export class Controls {
   private pointerLocked: boolean;
   private canvas: HTMLCanvasElement;
 
+  /**
+   * Sets up keyboard and mouse input handling for the game
+   */
   constructor(canvas: HTMLCanvasElement) {
     this.keys = new Set();
     this.mouseMovement = { x: 0, y: 0 };
@@ -17,6 +20,10 @@ export class Controls {
     this.setupEventListeners();
   }
 
+  /**
+   * Attaches all event listeners for keyboard and mouse input
+   * Handles pointer lock for first-person camera control
+   */
   private setupEventListeners(): void {
     document.addEventListener("keydown", (e) => {
       this.keys.add(e.code);
@@ -65,10 +72,17 @@ export class Controls {
     });
   }
 
+  /**
+   * Checks if a specific key is currently pressed
+   */
   isKeyPressed(key: string): boolean {
     return this.keys.has(key);
   }
 
+  /**
+   * Calculates normalized movement vector from WASD keys
+   * Returns normalized vector for consistent movement speed
+   */
   getMovementVector(): Vec3 {
     const movement: Vec3 = { x: 0, y: 0, z: 0 };
     
@@ -88,20 +102,33 @@ export class Controls {
     return movement;
   }
 
+  /**
+   * Returns accumulated mouse movement since last call
+   * Resets movement after reading
+   */
   getMouseMovement(): Vec2 {
     const movement = { ...this.mouseMovement };
     this.mouseMovement = { x: 0, y: 0 };
     return movement;
   }
 
+  /**
+   * Checks if left mouse button is currently pressed
+   */
   isMouseDown(): boolean {
     return this.mouseDown;
   }
 
+  /**
+   * Checks if pointer lock is currently active
+   */
   isPointerLocked(): boolean {
     return this.pointerLocked;
   }
 
+  /**
+   * Cleans up event listeners and releases pointer lock
+   */
   dispose(): void {
     this.keys.clear();
     if (this.pointerLocked) {

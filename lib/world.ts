@@ -4,16 +4,27 @@ export class World {
   private chunks: Map<string, Chunk>;
   private seed: number;
 
+  /**
+   * Creates a new world with optional seed for terrain generation
+   */
   constructor(seed: number = Date.now()) {
     this.chunks = new Map();
     this.seed = seed;
   }
 
+  /**
+   * Retrieves a chunk at the specified chunk coordinates
+   * Returns undefined if chunk doesn't exist
+   */
   getChunk(x: number, y: number, z: number): Chunk | undefined {
     const key = this.getChunkKey(x, y, z);
     return this.chunks.get(key);
   }
 
+  /**
+   * Generates a new chunk with terrain and trees
+   * Uses noise functions to create natural-looking terrain
+   */
   generateChunk(chunkX: number, chunkY: number, chunkZ: number): Chunk {
     const key = this.getChunkKey(chunkX, chunkY, chunkZ);
     
@@ -57,6 +68,10 @@ export class World {
     return chunk;
   }
 
+  /**
+   * Calculates terrain height at a given x,z coordinate using noise functions
+   * Combines multiple octaves for more natural terrain
+   */
   private getTerrainHeight(x: number, z: number): number {
     const scale = 0.02;
     const amplitude = 3;
@@ -70,11 +85,19 @@ export class World {
     return Math.floor(height);
   }
 
+  /**
+   * Simple 2D noise function for terrain generation
+   * Returns value between -1 and 1
+   */
   private noise2D(x: number, y: number): number {
     const n = Math.sin(x * 12.9898 + y * 78.233 + this.seed) * 43758.5453;
     return (n - Math.floor(n)) * 2 - 1;
   }
 
+  /**
+   * Randomly generates trees within a chunk
+   * Trees consist of wood trunk and leaf blocks
+   */
   private generateTrees(chunk: Chunk, chunkX: number, chunkY: number, chunkZ: number): void {
     const random = this.random(chunkX * 1000 + chunkZ);
     
@@ -119,11 +142,19 @@ export class World {
     }
   }
 
+  /**
+   * Seeded random number generator for consistent world generation
+   * Returns value between 0 and 1
+   */
   private random(seed: number): number {
     const x = Math.sin(seed + this.seed) * 10000;
     return x - Math.floor(x);
   }
 
+  /**
+   * Gets the block type at world coordinates
+   * Returns AIR if chunk doesn't exist
+   */
   getBlock(x: number, y: number, z: number): BlockType {
     const chunkX = Math.floor(x / CHUNK_SIZE);
     const chunkY = Math.floor(y / CHUNK_SIZE);
@@ -140,6 +171,10 @@ export class World {
     return chunk.blocks[index];
   }
 
+  /**
+   * Sets a block at world coordinates
+   * Generates chunk if it doesn't exist and marks it as dirty for re-rendering
+   */
   setBlock(x: number, y: number, z: number, blockType: BlockType): void {
     const chunkX = Math.floor(x / CHUNK_SIZE);
     const chunkY = Math.floor(y / CHUNK_SIZE);
@@ -159,10 +194,17 @@ export class World {
     chunk.isDirty = true;
   }
 
+  /**
+   * Creates a unique string key for chunk storage in the map
+   */
   private getChunkKey(x: number, y: number, z: number): string {
     return `${x},${y},${z}`;
   }
 
+  /**
+   * Generates all chunks within render distance of a position
+   * Used to ensure world is generated as player moves
+   */
   generateAroundPosition(position: Vec3, renderDistance: number): void {
     const chunkX = Math.floor(position.x / CHUNK_SIZE);
     const chunkY = Math.floor(position.y / CHUNK_SIZE);
@@ -183,10 +225,17 @@ export class World {
     }
   }
 
+  /**
+   * Returns all currently loaded chunks
+   */
   getChunks(): Chunk[] {
     return Array.from(this.chunks.values());
   }
 
+  /**
+   * Checks if a position would collide with solid blocks
+   * Used for player physics and movement validation
+   */
   checkCollision(position: Vec3): boolean {
     const playerRadius = 0.3;
     const playerHeight = 1.8;

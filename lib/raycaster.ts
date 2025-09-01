@@ -2,6 +2,10 @@ import { Vec3, BlockType } from "./types.ts";
 import { World } from "./world.ts";
 
 export class Raycaster {
+  /**
+   * Casts a ray from origin in direction to detect block intersections
+   * Returns hit information including position, normal, and distance
+   */
   static cast(
     origin: Vec3,
     direction: Vec3,
@@ -43,6 +47,10 @@ export class Raycaster {
     return null;
   }
   
+  /**
+   * Calculates the surface normal at the point of intersection
+   * Used to determine which face of the block was hit
+   */
   private static calculateNormal(previous: Vec3, current: Vec3): Vec3 {
     const blockPos = {
       x: Math.floor(current.x),
@@ -69,6 +77,10 @@ export class Raycaster {
     return { x: 0, y: 1, z: 0 };
   }
   
+  /**
+   * Calculates where to place a new block based on hit position and normal
+   * Places the block adjacent to the hit face
+   */
   static getPlacementPosition(
     hitPosition: Vec3,
     normal: Vec3

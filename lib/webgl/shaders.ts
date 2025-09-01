@@ -70,6 +70,10 @@ void main() {
     fragColor = vec4(color, 1.0);
 }`;
 
+/**
+ * Creates and links the main shader program for rendering
+ * Sets up default lighting and fog parameters
+ */
 export function createShaderProgram(gl: WebGL2RenderingContext): WebGLProgram {
   const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
   const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -104,6 +108,10 @@ export function createShaderProgram(gl: WebGL2RenderingContext): WebGLProgram {
   return program;
 }
 
+/**
+ * Compiles a single shader (vertex or fragment)
+ * Throws error if compilation fails
+ */
 function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
   const shader = gl.createShader(type);
   if (!shader) {

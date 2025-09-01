@@ -11,6 +11,9 @@ export class PlayerController {
   private mouseSensitivity: number = 0.002;
   private onGround: boolean = false;
 
+  /**
+   * Creates a new player controller with initial position and inventory
+   */
   constructor(controls: Controls, startPosition: Vec3) {
     this.controls = controls;
     this.player = {
@@ -32,11 +35,19 @@ export class PlayerController {
     };
   }
 
+  /**
+   * Updates player state including rotation and movement
+   * Applies physics and collision detection
+   */
   update(deltaTime: number, checkCollision: (pos: Vec3) => boolean): void {
     this.updateRotation();
     this.updateMovement(deltaTime, checkCollision);
   }
 
+  /**
+   * Updates player camera rotation based on mouse movement
+   * Clamps vertical rotation to prevent over-rotation
+   */
   private updateRotation(): void {
     const mouseMovement = this.controls.getMouseMovement();
     
@@ -49,6 +60,10 @@ export class PlayerController {
     while (this.player.rotation.y >= Math.PI * 2) this.player.rotation.y -= Math.PI * 2;
   }
 
+  /**
+   * Handles player movement including walking, jumping, and gravity
+   * Applies collision detection for each axis separately
+   */
   private updateMovement(deltaTime: number, checkCollision: (pos: Vec3) => boolean): void {
     const movement = this.controls.getMovementVector();
     
@@ -113,6 +128,10 @@ export class PlayerController {
     }
   }
 
+  /**
+   * Returns camera position and rotation for rendering
+   * Camera is positioned at eye height above player position
+   */
   getCamera(): { position: Vec3; rotation: Vec2 } {
     const eyeHeight = 1.7;
     return {
@@ -125,6 +144,9 @@ export class PlayerController {
     };
   }
 
+  /**
+   * Changes the currently selected tool
+   */
   selectTool(toolType: ToolType): void {
     this.player.selectedTool = {
       type: toolType,
@@ -133,6 +155,10 @@ export class PlayerController {
     };
   }
 
+  /**
+   * Returns the currently selected block type from inventory
+   * Returns null if inventory is empty
+   */
   getSelectedBlockType(): BlockType | null {
     if (this.player.inventory.length > 0) {
       return this.player.inventory[0].blockType;
@@ -140,6 +166,10 @@ export class PlayerController {
     return null;
   }
 
+  /**
+   * Sets the selected block type and moves it to front of inventory
+   * Adds new block type to inventory if not present
+   */
   setSelectedBlock(blockType: BlockType): void {
     const inventoryItem = this.player.inventory.find(item => item.blockType === blockType);
     if (inventoryItem) {

@@ -3,11 +3,17 @@ import { Vec2, Vec3 } from "./types.ts";
 export class Mat4 {
   data: Float32Array;
 
+  /**
+   * Creates a 4x4 identity matrix
+   */
   constructor() {
     this.data = new Float32Array(16);
     this.identity();
   }
 
+  /**
+   * Resets matrix to identity matrix
+   */
   identity(): Mat4 {
     this.data.fill(0);
     this.data[0] = 1;
@@ -17,6 +23,9 @@ export class Mat4 {
     return this;
   }
 
+  /**
+   * Creates a perspective projection matrix for 3D rendering
+   */
   static perspective(fov: number, aspect: number, near: number, far: number): Mat4 {
     const mat = new Mat4();
     const f = 1.0 / Math.tan(fov / 2);
@@ -32,6 +41,9 @@ export class Mat4 {
     return mat;
   }
 
+  /**
+   * Creates a view matrix that looks from eye position to center
+   */
   static lookAt(eye: Vec3, center: Vec3, up: Vec3): Mat4 {
     const mat = new Mat4();
     
@@ -59,6 +71,9 @@ export class Mat4 {
     return mat;
   }
 
+  /**
+   * Creates a translation matrix
+   */
   static translate(v: Vec3): Mat4 {
     const mat = new Mat4();
     mat.data[12] = v.x;
@@ -67,6 +82,9 @@ export class Mat4 {
     return mat;
   }
 
+  /**
+   * Creates a rotation matrix around Y axis
+   */
   static rotateY(angle: number): Mat4 {
     const mat = new Mat4();
     const c = Math.cos(angle);
@@ -80,6 +98,9 @@ export class Mat4 {
     return mat;
   }
 
+  /**
+   * Creates a rotation matrix around X axis
+   */
   static rotateX(angle: number): Mat4 {
     const mat = new Mat4();
     const c = Math.cos(angle);
@@ -93,6 +114,9 @@ export class Mat4 {
     return mat;
   }
 
+  /**
+   * Multiplies this matrix by another matrix
+   */
   multiply(other: Mat4): Mat4 {
     const result = new Mat4();
     const a = this.data;
@@ -113,12 +137,18 @@ export class Mat4 {
   }
 }
 
+/**
+ * Normalizes a 3D vector to unit length
+ */
 export function normalize(v: Vec3): Vec3 {
   const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
   if (len === 0) return { x: 0, y: 0, z: 0 };
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
+/**
+ * Calculates cross product of two 3D vectors
+ */
 export function cross(a: Vec3, b: Vec3): Vec3 {
   return {
     x: a.y * b.z - a.z * b.y,
@@ -127,22 +157,37 @@ export function cross(a: Vec3, b: Vec3): Vec3 {
   };
 }
 
+/**
+ * Calculates dot product of two 3D vectors
+ */
 export function dot(a: Vec3, b: Vec3): number {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+/**
+ * Subtracts vector b from vector a
+ */
 export function subtract(a: Vec3, b: Vec3): Vec3 {
   return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
 }
 
+/**
+ * Adds two 3D vectors
+ */
 export function add(a: Vec3, b: Vec3): Vec3 {
   return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
 }
 
+/**
+ * Scales a 3D vector by a scalar value
+ */
 export function scale(v: Vec3, s: number): Vec3 {
   return { x: v.x * s, y: v.y * s, z: v.z * s };
 }
 
+/**
+ * Linear interpolation between two values
+ */
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
