@@ -58,15 +58,14 @@ export class World {
   }
 
   private getTerrainHeight(x: number, z: number): number {
-    const scale = 0.05;
-    const amplitude = 20;
-    const baseHeight = 32;
+    const scale = 0.02;
+    const amplitude = 3;
+    const baseHeight = 20;
     
     const noise = this.noise2D(x * scale, z * scale);
-    const octave1 = this.noise2D(x * scale * 2, z * scale * 2) * 0.5;
-    const octave2 = this.noise2D(x * scale * 4, z * scale * 4) * 0.25;
+    const octave1 = this.noise2D(x * scale * 2, z * scale * 2) * 0.3;
     
-    const height = baseHeight + (noise + octave1 + octave2) * amplitude;
+    const height = baseHeight + (noise + octave1) * amplitude;
     
     return Math.floor(height);
   }
@@ -79,7 +78,7 @@ export class World {
   private generateTrees(chunk: Chunk, chunkX: number, chunkY: number, chunkZ: number): void {
     const random = this.random(chunkX * 1000 + chunkZ);
     
-    if (random < 0.1) {
+    if (random < 0.02) {
       const treeX = Math.floor(this.random(chunkX * 100) * (CHUNK_SIZE - 4)) + 2;
       const treeZ = Math.floor(this.random(chunkZ * 100) * (CHUNK_SIZE - 4)) + 2;
       

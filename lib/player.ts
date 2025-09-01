@@ -6,8 +6,8 @@ export class PlayerController {
   public player: Player;
   private controls: Controls;
   private gravity: number = -30;
-  private jumpVelocity: number = 10;
-  private moveSpeed: number = 5;
+  private jumpVelocity: number = 12;
+  private moveSpeed: number = 10;
   private mouseSensitivity: number = 0.002;
   private onGround: boolean = false;
 
@@ -81,16 +81,22 @@ export class PlayerController {
       this.player.velocity.y += this.gravity * deltaTime;
     }
     
-    const newPosition = { ...this.player.position };
+    const newPosition: Vec3 = { ...this.player.position };
     
-    newPosition.x += this.player.velocity.x * deltaTime;
+    newPosition.x = this.player.position.x + this.player.velocity.x * deltaTime;
     if (!checkCollision(newPosition)) {
       this.player.position.x = newPosition.x;
+    } else {
+      this.player.velocity.x = 0;
     }
     
-    newPosition.y += this.player.velocity.y * deltaTime;
+    newPosition.x = this.player.position.x;
+    newPosition.y = this.player.position.y + this.player.velocity.y * deltaTime;
     if (!checkCollision(newPosition)) {
       this.player.position.y = newPosition.y;
+      if (this.onGround && this.player.velocity.y < 0) {
+        this.onGround = false;
+      }
     } else {
       if (this.player.velocity.y < 0) {
         this.onGround = true;
@@ -98,9 +104,12 @@ export class PlayerController {
       this.player.velocity.y = 0;
     }
     
-    newPosition.z += this.player.velocity.z * deltaTime;
+    newPosition.y = this.player.position.y;
+    newPosition.z = this.player.position.z + this.player.velocity.z * deltaTime;
     if (!checkCollision(newPosition)) {
       this.player.position.z = newPosition.z;
+    } else {
+      this.player.velocity.z = 0;
     }
   }
 
@@ -129,5 +138,14 @@ export class PlayerController {
       return this.player.inventory[0].blockType;
     }
     return null;
+  }
+
+  setSelectedBlock(blockType: BlockType): void {
+    const inventoryItem = this.player.inventory.find(item => item.blockType === blockType);
+    if (inventoryItem) {
+      this.player.inventory = [inventoryItem, ...this.player.inventory.filter(item => item.blockType !== blockType)];
+    } else {
+      this.player.inventory = [{ blockType, count: 64 }, ...this.player.inventory];
+    }
   }
 }

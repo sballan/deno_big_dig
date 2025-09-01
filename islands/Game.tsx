@@ -1,9 +1,19 @@
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { Game } from "../lib/game.ts";
+import { BlockType } from "../lib/types.ts";
 
 export default function GameComponent() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState(0);
+
+  const inventory = [
+    { name: "Stone", type: BlockType.STONE },
+    { name: "Dirt", type: BlockType.DIRT },
+    { name: "Grass", type: BlockType.GRASS },
+    { name: "Wood", type: BlockType.WOOD },
+    { name: "Planks", type: BlockType.PLANKS },
+  ];
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -12,7 +22,19 @@ export default function GameComponent() {
     gameRef.current = game;
     game.start();
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 5) {
+        const slot = num - 1;
+        setSelectedSlot(slot);
+        game.setSelectedBlock(inventory[slot].type);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
+      document.removeEventListener("keydown", handleKeyDown);
       game.dispose();
     };
   }, []);
@@ -35,13 +57,23 @@ export default function GameComponent() {
           </ul>
         </div>
         <div class="inventory">
-          <h3>Inventory</h3>
+          <h3>Inventory (Press 1-5 to select)</h3>
           <div class="inventory-slots">
-            <div class="slot active">Stone</div>
-            <div class="slot">Dirt</div>
-            <div class="slot">Grass</div>
-            <div class="slot">Wood</div>
-            <div class="slot">Planks</div>
+            {inventory.map((item, index) => (
+              <div 
+                key={index}
+                class={`slot ${selectedSlot === index ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedSlot(index);
+                  if (gameRef.current) {
+                    gameRef.current.setSelectedBlock(item.type);
+                  }
+                }}
+              >
+                <div class="slot-number">{index + 1}</div>
+                <div class="slot-name">{item.name}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -121,15 +153,17 @@ export default function GameComponent() {
         }
         
         .slot {
-          width: 50px;
-          height: 50px;
+          width: 60px;
+          height: 60px;
           background: rgba(100, 100, 100, 0.5);
           border: 2px solid #444;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           font-size: 10px;
           cursor: pointer;
+          position: relative;
         }
         
         .slot.active {
@@ -139,6 +173,18 @@ export default function GameComponent() {
         
         .slot:hover {
           background: rgba(150, 150, 150, 0.5);
+        }
+        
+        .slot-number {
+          position: absolute;
+          top: 2px;
+          left: 4px;
+          font-size: 8px;
+          color: #aaa;
+        }
+        
+        .slot-name {
+          font-size: 11px;
         }
       `}</style>
     </div>

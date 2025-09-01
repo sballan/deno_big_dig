@@ -21,10 +21,10 @@ export class Game {
     this.renderer = new Renderer(canvas);
     this.world = new World();
     this.controls = new Controls(canvas);
-    this.player = new PlayerController(this.controls, { x: 0, y: 40, z: 0 });
+    this.player = new PlayerController(this.controls, { x: 0, y: 25, z: 0 });
     
     this.camera = {
-      position: { x: 0, y: 40, z: 0 },
+      position: { x: 0, y: 25, z: 0 },
       rotation: { x: 0, y: 0 },
       fov: Math.PI / 3,
       aspect: canvas.width / canvas.height,
@@ -150,6 +150,10 @@ export class Game {
     }
     
     this.renderer.renderChunks();
+  }
+
+  setSelectedBlock(blockType: BlockType): void {
+    this.player.setSelectedBlock(blockType);
   }
 
   dispose(): void {
