@@ -72,8 +72,8 @@ export class Controls {
   getMovementVector(): Vec3 {
     const movement: Vec3 = { x: 0, y: 0, z: 0 };
     
-    if (this.isKeyPressed("KeyW")) movement.z -= 1;
-    if (this.isKeyPressed("KeyS")) movement.z += 1;
+    if (this.isKeyPressed("KeyW")) movement.z += 1;
+    if (this.isKeyPressed("KeyS")) movement.z -= 1;
     if (this.isKeyPressed("KeyA")) movement.x -= 1;
     if (this.isKeyPressed("KeyD")) movement.x += 1;
     if (this.isKeyPressed("Space")) movement.y += 1;
