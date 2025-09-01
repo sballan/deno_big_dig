@@ -1,0 +1,247 @@
+import { Mat4 } from "../math.ts";
+import { BlockType, Camera, Chunk, CHUNK_SIZE, Vec3 } from "../types.ts";
+import { createShaderProgram } from "./shaders.ts";
+import { BlockMesh } from "./mesh.ts";
+
+export class Renderer {
+  private gl: WebGL2RenderingContext;
+  private shaderProgram: WebGLProgram;
+  private projectionMatrix: Mat4;
+  private viewMatrix: Mat4;
+  private blockMesh: BlockMesh;
+  private chunkMeshes: Map<string, { vao: WebGLVertexArrayObject; vertexCount: number }>;
+
+  constructor(canvas: HTMLCanvasElement) {
+    const gl = canvas.getContext("webgl2");
+    if (!gl) {
+      throw new Error("WebGL2 not supported");
+    }
+    this.gl = gl;
+    
+    this.shaderProgram = createShaderProgram(gl);
+    this.projectionMatrix = new Mat4();
+    this.viewMatrix = new Mat4();
+    this.blockMesh = new BlockMesh(gl, this.shaderProgram);
+    this.chunkMeshes = new Map();
+
+    this.setupGL();
+  }
+
+  private setupGL(): void {
+    const gl = this.gl;
+    
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    
+    gl.clearColor(0.53, 0.81, 0.98, 1.0);
+  }
+
+  resize(width: number, height: number): void {
+    this.gl.viewport(0, 0, width, height);
+  }
+
+  clear(): void {
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+  }
+
+  setCamera(camera: Camera): void {
+    this.projectionMatrix = Mat4.perspective(
+      camera.fov,
+      camera.aspect,
+      camera.near,
+      camera.far
+    );
+
+    const target: Vec3 = {
+      x: camera.position.x - Math.sin(camera.rotation.y) * Math.cos(camera.rotation.x),
+      y: camera.position.y + Math.sin(camera.rotation.x),
+      z: camera.position.z - Math.cos(camera.rotation.y) * Math.cos(camera.rotation.x),
+    };
+
+    this.viewMatrix = Mat4.lookAt(
+      camera.position,
+      target,
+      { x: 0, y: 1, z: 0 }
+    );
+  }
+
+  buildChunkMesh(chunk: Chunk): void {
+    const chunkKey = `${chunk.position.x},${chunk.position.y},${chunk.position.z}`;
+    
+    const vertices: number[] = [];
+    const normals: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+    
+    for (let x = 0; x < CHUNK_SIZE; x++) {
+      for (let y = 0; y < CHUNK_SIZE; y++) {
+        for (let z = 0; z < CHUNK_SIZE; z++) {
+          const index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+          const blockType = chunk.blocks[index];
+          
+          if (blockType === BlockType.AIR) continue;
+          
+          const worldPos: Vec3 = {
+            x: chunk.position.x * CHUNK_SIZE + x,
+            y: chunk.position.y * CHUNK_SIZE + y,
+            z: chunk.position.z * CHUNK_SIZE + z,
+          };
+          
+          this.addBlockToMesh(
+            blockType,
+            worldPos,
+            chunk,
+            { x, y, z },
+            vertices,
+            normals,
+            uvs,
+            indices
+          );
+        }
+      }
+    }
+    
+    if (vertices.length === 0) return;
+    
+    const gl = this.gl;
+    const vao = gl.createVertexArray();
+    if (!vao) return;
+    
+    gl.bindVertexArray(vao);
+    
+    const vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(0);
+    
+    const nbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(1);
+    
+    const tbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(2, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(2);
+    
+    const ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
+    
+    gl.bindVertexArray(null);
+    
+    const existingMesh = this.chunkMeshes.get(chunkKey);
+    if (existingMesh) {
+      gl.deleteVertexArray(existingMesh.vao);
+    }
+    
+    this.chunkMeshes.set(chunkKey, { vao, vertexCount: indices.length });
+    chunk.isDirty = false;
+  }
+
+  private addBlockToMesh(
+    blockType: BlockType,
+    worldPos: Vec3,
+    chunk: Chunk,
+    localPos: Vec3,
+    vertices: number[],
+    normals: number[],
+    uvs: number[],
+    indices: number[]
+  ): void {
+    const baseIndex = vertices.length / 3;
+    
+    const faces = [
+      { normal: [0, 1, 0], vertices: [[0, 1, 0], [1, 1, 0], [1, 1, 1], [0, 1, 1]] }, // top
+      { normal: [0, -1, 0], vertices: [[0, 0, 0], [0, 0, 1], [1, 0, 1], [1, 0, 0]] }, // bottom
+      { normal: [0, 0, 1], vertices: [[0, 0, 1], [0, 1, 1], [1, 1, 1], [1, 0, 1]] }, // front
+      { normal: [0, 0, -1], vertices: [[1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 0]] }, // back
+      { normal: [1, 0, 0], vertices: [[1, 0, 0], [1, 0, 1], [1, 1, 1], [1, 1, 0]] }, // right
+      { normal: [-1, 0, 0], vertices: [[0, 0, 1], [0, 0, 0], [0, 1, 0], [0, 1, 1]] }, // left
+    ];
+    
+    const textureCoords = this.getTextureCoords(blockType);
+    
+    faces.forEach((face, faceIndex) => {
+      if (this.shouldRenderFace(chunk, localPos, face.normal)) {
+        const faceBaseIndex = vertices.length / 3;
+        
+        face.vertices.forEach((vertex) => {
+          vertices.push(worldPos.x + vertex[0], worldPos.y + vertex[1], worldPos.z + vertex[2]);
+          normals.push(...face.normal);
+        });
+        
+        uvs.push(...textureCoords[faceIndex]);
+        
+        indices.push(
+          faceBaseIndex, faceBaseIndex + 1, faceBaseIndex + 2,
+          faceBaseIndex, faceBaseIndex + 2, faceBaseIndex + 3
+        );
+      }
+    });
+  }
+
+  private shouldRenderFace(chunk: Chunk, pos: Vec3, normal: number[]): boolean {
+    const nx = pos.x + normal[0];
+    const ny = pos.y + normal[1];
+    const nz = pos.z + normal[2];
+    
+    if (nx < 0 || nx >= CHUNK_SIZE || ny < 0 || ny >= CHUNK_SIZE || nz < 0 || nz >= CHUNK_SIZE) {
+      return true;
+    }
+    
+    const index = nx + ny * CHUNK_SIZE + nz * CHUNK_SIZE * CHUNK_SIZE;
+    return chunk.blocks[index] === BlockType.AIR;
+  }
+
+  private getTextureCoords(blockType: BlockType): number[][] {
+    const coords = [
+      [0, 0, 1, 0, 1, 1, 0, 1],
+      [0, 0, 1, 0, 1, 1, 0, 1],
+      [0, 0, 1, 0, 1, 1, 0, 1],
+      [0, 0, 1, 0, 1, 1, 0, 1],
+      [0, 0, 1, 0, 1, 1, 0, 1],
+      [0, 0, 1, 0, 1, 1, 0, 1],
+    ];
+    return coords;
+  }
+
+  renderChunks(): void {
+    const gl = this.gl;
+    
+    gl.useProgram(this.shaderProgram);
+    
+    const projLoc = gl.getUniformLocation(this.shaderProgram, "uProjectionMatrix");
+    const viewLoc = gl.getUniformLocation(this.shaderProgram, "uViewMatrix");
+    const modelLoc = gl.getUniformLocation(this.shaderProgram, "uModelMatrix");
+    
+    gl.uniformMatrix4fv(projLoc, false, this.projectionMatrix.data);
+    gl.uniformMatrix4fv(viewLoc, false, this.viewMatrix.data);
+    
+    const modelMatrix = new Mat4();
+    gl.uniformMatrix4fv(modelLoc, false, modelMatrix.data);
+    
+    for (const [_, mesh] of this.chunkMeshes) {
+      gl.bindVertexArray(mesh.vao);
+      gl.drawElements(gl.TRIANGLES, mesh.vertexCount, gl.UNSIGNED_INT, 0);
+    }
+    
+    gl.bindVertexArray(null);
+  }
+
+  dispose(): void {
+    const gl = this.gl;
+    
+    for (const [_, mesh] of this.chunkMeshes) {
+      gl.deleteVertexArray(mesh.vao);
+    }
+    
+    this.chunkMeshes.clear();
+    this.blockMesh.dispose();
+    gl.deleteProgram(this.shaderProgram);
+  }
+}
