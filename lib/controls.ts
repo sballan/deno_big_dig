@@ -16,7 +16,7 @@ export class Controls {
     this.mouseDown = false;
     this.pointerLocked = false;
     this.canvas = canvas;
-    
+
     this.setupEventListeners();
   }
 
@@ -27,7 +27,7 @@ export class Controls {
   private setupEventListeners(): void {
     document.addEventListener("keydown", (e) => {
       this.keys.add(e.code);
-      
+
       if (e.code === "Tab") {
         e.preventDefault();
       }
@@ -66,7 +66,7 @@ export class Controls {
       }
     });
 
-    window.addEventListener("blur", () => {
+    globalThis.addEventListener("blur", () => {
       this.keys.clear();
       this.mouseDown = false;
     });
@@ -85,20 +85,20 @@ export class Controls {
    */
   getMovementVector(): Vec3 {
     const movement: Vec3 = { x: 0, y: 0, z: 0 };
-    
+
     if (this.isKeyPressed("KeyW")) movement.z += 1;
     if (this.isKeyPressed("KeyS")) movement.z -= 1;
     if (this.isKeyPressed("KeyA")) movement.x -= 1;
     if (this.isKeyPressed("KeyD")) movement.x += 1;
     if (this.isKeyPressed("Space")) movement.y += 1;
     if (this.isKeyPressed("ShiftLeft")) movement.y -= 1;
-    
+
     const length = Math.sqrt(movement.x * movement.x + movement.z * movement.z);
     if (length > 0) {
       movement.x /= length;
       movement.z /= length;
     }
-    
+
     return movement;
   }
 

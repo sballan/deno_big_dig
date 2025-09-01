@@ -1,4 +1,4 @@
-import { Player, Vec3, Vec2, ToolType, BlockType } from "./types.ts";
+import { BlockType, Player, ToolType, Vec2, Vec3 } from "./types.ts";
 import { Controls } from "./controls.ts";
 import { add, scale } from "./math.ts";
 
@@ -50,61 +50,69 @@ export class PlayerController {
    */
   private updateRotation(): void {
     const mouseMovement = this.controls.getMouseMovement();
-    
+
     this.player.rotation.y -= mouseMovement.x * this.mouseSensitivity;
     this.player.rotation.x -= mouseMovement.y * this.mouseSensitivity;
-    
-    this.player.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.player.rotation.x));
-    
+
+    this.player.rotation.x = Math.max(
+      -Math.PI / 2,
+      Math.min(Math.PI / 2, this.player.rotation.x),
+    );
+
     while (this.player.rotation.y < 0) this.player.rotation.y += Math.PI * 2;
-    while (this.player.rotation.y >= Math.PI * 2) this.player.rotation.y -= Math.PI * 2;
+    while (this.player.rotation.y >= Math.PI * 2) {
+      this.player.rotation.y -= Math.PI * 2;
+    }
   }
 
   /**
    * Handles player movement including walking, jumping, and gravity
    * Applies collision detection for each axis separately
    */
-  private updateMovement(deltaTime: number, checkCollision: (pos: Vec3) => boolean): void {
+  private updateMovement(
+    deltaTime: number,
+    checkCollision: (pos: Vec3) => boolean,
+  ): void {
     const movement = this.controls.getMovementVector();
-    
+
     const forward: Vec3 = {
       x: -Math.sin(this.player.rotation.y),
       y: 0,
       z: -Math.cos(this.player.rotation.y),
     };
-    
+
     const right: Vec3 = {
       x: -Math.sin(this.player.rotation.y - Math.PI / 2),
       y: 0,
       z: -Math.cos(this.player.rotation.y - Math.PI / 2),
     };
-    
+
     const moveVector = add(
       scale(forward, movement.z * this.moveSpeed),
-      scale(right, movement.x * this.moveSpeed)
+      scale(right, movement.x * this.moveSpeed),
     );
-    
+
     this.player.velocity.x = moveVector.x;
     this.player.velocity.z = moveVector.z;
-    
+
     if (this.onGround && this.controls.isKeyPressed("Space")) {
       this.player.velocity.y = this.jumpVelocity;
       this.onGround = false;
     }
-    
+
     if (!this.onGround) {
       this.player.velocity.y += this.gravity * deltaTime;
     }
-    
+
     const newPosition: Vec3 = { ...this.player.position };
-    
+
     newPosition.x = this.player.position.x + this.player.velocity.x * deltaTime;
     if (!checkCollision(newPosition)) {
       this.player.position.x = newPosition.x;
     } else {
       this.player.velocity.x = 0;
     }
-    
+
     newPosition.x = this.player.position.x;
     newPosition.y = this.player.position.y + this.player.velocity.y * deltaTime;
     if (!checkCollision(newPosition)) {
@@ -118,7 +126,7 @@ export class PlayerController {
       }
       this.player.velocity.y = 0;
     }
-    
+
     newPosition.y = this.player.position.y;
     newPosition.z = this.player.position.z + this.player.velocity.z * deltaTime;
     if (!checkCollision(newPosition)) {
@@ -171,11 +179,19 @@ export class PlayerController {
    * Adds new block type to inventory if not present
    */
   setSelectedBlock(blockType: BlockType): void {
-    const inventoryItem = this.player.inventory.find(item => item.blockType === blockType);
+    const inventoryItem = this.player.inventory.find((item) =>
+      item.blockType === blockType
+    );
     if (inventoryItem) {
-      this.player.inventory = [inventoryItem, ...this.player.inventory.filter(item => item.blockType !== blockType)];
+      this.player.inventory = [
+        inventoryItem,
+        ...this.player.inventory.filter((item) => item.blockType !== blockType),
+      ];
     } else {
-      this.player.inventory = [{ blockType, count: 64 }, ...this.player.inventory];
+      this.player.inventory = [
+        { blockType, count: 64 },
+        ...this.player.inventory,
+      ];
     }
   }
 }

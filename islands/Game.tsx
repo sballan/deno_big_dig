@@ -46,23 +46,39 @@ export default function GameComponent() {
         <div class="controls-help">
           <h3>Controls</h3>
           <ul>
-            <li><strong>Click canvas</strong> - Lock pointer</li>
-            <li><strong>WASD</strong> - Move</li>
-            <li><strong>Space</strong> - Jump</li>
-            <li><strong>Shift</strong> - Descend</li>
-            <li><strong>Mouse</strong> - Look around</li>
-            <li><strong>Left Click</strong> - Break block</li>
-            <li><strong>Right Click</strong> - Place block</li>
-            <li><strong>ESC</strong> - Release pointer</li>
+            <li>
+              <strong>Click canvas</strong> - Lock pointer
+            </li>
+            <li>
+              <strong>WASD</strong> - Move
+            </li>
+            <li>
+              <strong>Space</strong> - Jump
+            </li>
+            <li>
+              <strong>Shift</strong> - Descend
+            </li>
+            <li>
+              <strong>Mouse</strong> - Look around
+            </li>
+            <li>
+              <strong>Left Click</strong> - Break block
+            </li>
+            <li>
+              <strong>Right Click</strong> - Place block
+            </li>
+            <li>
+              <strong>ESC</strong> - Release pointer
+            </li>
           </ul>
         </div>
         <div class="inventory">
           <h3>Inventory (Press 1-5 to select)</h3>
           <div class="inventory-slots">
             {inventory.map((item, index) => (
-              <div 
+              <div
                 key={index}
-                class={`slot ${selectedSlot === index ? 'active' : ''}`}
+                class={`slot ${selectedSlot === index ? "active" : ""}`}
                 onClick={() => {
                   setSelectedSlot(index);
                   if (gameRef.current) {
@@ -77,7 +93,8 @@ export default function GameComponent() {
           </div>
         </div>
       </div>
-      <style>{`
+      <style>
+        {`
         .game-container {
           position: relative;
           width: 100vw;
@@ -186,7 +203,8 @@ export default function GameComponent() {
         .slot-name {
           font-size: 11px;
         }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }

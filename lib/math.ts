@@ -1,4 +1,4 @@
-import { Vec2, Vec3 } from "./types.ts";
+import { Vec3 } from "./types.ts";
 
 export class Mat4 {
   data: Float32Array;
@@ -26,7 +26,12 @@ export class Mat4 {
   /**
    * Creates a perspective projection matrix for 3D rendering
    */
-  static perspective(fov: number, aspect: number, near: number, far: number): Mat4 {
+  static perspective(
+    fov: number,
+    aspect: number,
+    near: number,
+    far: number,
+  ): Mat4 {
     const mat = new Mat4();
     const f = 1.0 / Math.tan(fov / 2);
     const nf = 1 / (near - far);
@@ -46,7 +51,7 @@ export class Mat4 {
    */
   static lookAt(eye: Vec3, center: Vec3, up: Vec3): Mat4 {
     const mat = new Mat4();
-    
+
     const zAxis = normalize(subtract(eye, center));
     const xAxis = normalize(cross(up, zAxis));
     const yAxis = cross(zAxis, xAxis);
@@ -89,12 +94,12 @@ export class Mat4 {
     const mat = new Mat4();
     const c = Math.cos(angle);
     const s = Math.sin(angle);
-    
+
     mat.data[0] = c;
     mat.data[2] = s;
     mat.data[8] = -s;
     mat.data[10] = c;
-    
+
     return mat;
   }
 
@@ -105,12 +110,12 @@ export class Mat4 {
     const mat = new Mat4();
     const c = Math.cos(angle);
     const s = Math.sin(angle);
-    
+
     mat.data[5] = c;
     mat.data[6] = -s;
     mat.data[9] = s;
     mat.data[10] = c;
-    
+
     return mat;
   }
 
@@ -125,8 +130,7 @@ export class Mat4 {
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
-        out[i * 4 + j] = 
-          a[i * 4 + 0] * b[0 * 4 + j] +
+        out[i * 4 + j] = a[i * 4 + 0] * b[0 * 4 + j] +
           a[i * 4 + 1] * b[1 * 4 + j] +
           a[i * 4 + 2] * b[2 * 4 + j] +
           a[i * 4 + 3] * b[3 * 4 + j];
