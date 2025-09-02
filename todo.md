@@ -14,9 +14,6 @@ been added, so you can add it to your own todo list
 
 ## Tasks
 
-- [ ] When I look directly down, the whole screen turns very bright blue, almost
-      white
-
 ## Archive
 
 ### Bugfixes
@@ -29,6 +26,8 @@ been added, so you can add it to your own todo list
       know what block we're clicking on when we click the mouse
 - [x] Right clicking should build a block, it does not currently
 - [x] The default world flatness should be 100%
+- [x] When I look directly down, the whole screen turns very bright blue, almost
+      white
 
 ### Create New Game
 
