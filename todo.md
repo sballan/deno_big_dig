@@ -11,11 +11,19 @@ section. If I say yes, move the section into the archive below.
 
 ## Tasks
 
-- [ ] I can see that the tree has a hollow look to it, somehow it's not
-      rendering correctly. Can you examine the code and figure out what this is?
-- [ ]
+- [ ] The player currently doesn't fall down into areas where blocks used to be
+      after the blocks are destroyed.
+- [ ] There should be a cross hairs in the very center of the screen so that we
+      know what block we're clicking on when we click the mouse
+- [ ] Right clicking should build a block, it does not currently
+- [ ] The default world flatness should be 100%
 
 ## Archive
+
+### Bugfixes
+
+- [x] I can see that the tree has a hollow look to it, somehow it's not
+      rendering correctly. Can you examine the code and figure out what this is?
 
 ### Create New Game
 
