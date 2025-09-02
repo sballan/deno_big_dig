@@ -110,9 +110,11 @@ export class Game {
       }
     });
 
-    this.canvas.addEventListener("contextmenu", (e) => {
+    // Handle right-click for block placement
+    this.canvas.addEventListener("mousedown", (e) => {
+      if (e.button !== 2) return; // Only handle right-click (button 2)
+      
       e.preventDefault();
-
       if (!this.controls.isPointerLocked()) return;
 
       const playerCamera = this.player.getCamera();
@@ -147,6 +149,11 @@ export class Game {
           );
         }
       }
+    });
+
+    // Prevent context menu from appearing on right-click
+    this.canvas.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
     });
   }
 

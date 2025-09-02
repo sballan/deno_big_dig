@@ -9,11 +9,11 @@ export default function GameComponent() {
   const [isPaused, setIsPaused] = useState(true); // Start paused
   const [showConfig, setShowConfig] = useState(false);
   const [config, setConfig] = useState<GameConfig>({
-    flatness: 0.5,
+    flatness: 1.0,
     treeFrequency: 0.02,
   });
   const [tempConfig, setTempConfig] = useState<GameConfig>({
-    flatness: 0.5,
+    flatness: 1.0,
     treeFrequency: 0.02,
   });
 
@@ -90,6 +90,12 @@ export default function GameComponent() {
 
       {/* Game UI (hidden when paused) */}
       <div class={`game-ui ${isPaused ? "hidden" : ""}`}>
+        {/* Crosshairs in center of screen */}
+        <div class="crosshairs">
+          <div class="crosshair-horizontal"></div>
+          <div class="crosshair-vertical"></div>
+        </div>
+        
         <div class="controls-help">
           <h3>Controls</h3>
           <ul>
@@ -268,6 +274,35 @@ export default function GameComponent() {
         
         .game-ui.hidden {
           opacity: 0;
+        }
+        
+        /* Crosshairs in center of screen */
+        .crosshairs {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        }
+        
+        .crosshair-horizontal {
+          width: 20px;
+          height: 2px;
+          background: rgba(255, 255, 255, 0.8);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        
+        .crosshair-vertical {
+          width: 2px;
+          height: 20px;
+          background: rgba(255, 255, 255, 0.8);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
         }
         
         .controls-help {

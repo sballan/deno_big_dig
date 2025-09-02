@@ -48,7 +48,7 @@ export class Renderer {
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
-    gl.clearColor(0.53, 0.81, 0.98, 1.0);
+    gl.clearColor(0.4, 0.6, 0.8, 1.0);
   }
 
   /**

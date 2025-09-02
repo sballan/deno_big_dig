@@ -66,6 +66,18 @@ export class PlayerController {
   }
 
   /**
+   * Checks if the player should be on the ground by testing slightly below current position
+   */
+  private checkGroundBelow(checkCollision: (pos: Vec3) => boolean): boolean {
+    const testPos: Vec3 = {
+      x: this.player.position.x,
+      y: this.player.position.y - 0.1, // Test slightly below current position
+      z: this.player.position.z,
+    };
+    return checkCollision(testPos);
+  }
+
+  /**
    * Handles player movement including walking, jumping, and gravity
    * Applies collision detection for each axis separately
    */
@@ -73,6 +85,11 @@ export class PlayerController {
     deltaTime: number,
     checkCollision: (pos: Vec3) => boolean,
   ): void {
+    // Check if player should still be on ground (in case blocks were destroyed)
+    if (this.onGround && !this.checkGroundBelow(checkCollision)) {
+      this.onGround = false;
+    }
+
     const movement = this.controls.getMovementVector();
 
     const forward: Vec3 = {
@@ -117,10 +134,12 @@ export class PlayerController {
     newPosition.y = this.player.position.y + this.player.velocity.y * deltaTime;
     if (!checkCollision(newPosition)) {
       this.player.position.y = newPosition.y;
-      if (this.onGround && this.player.velocity.y < 0) {
+      // If we successfully moved downward, we're no longer on ground
+      if (this.player.velocity.y < 0) {
         this.onGround = false;
       }
     } else {
+      // We hit something - if we were moving down, we're now on ground
       if (this.player.velocity.y < 0) {
         this.onGround = true;
       }

@@ -102,7 +102,7 @@ export function createShaderProgram(gl: WebGL2RenderingContext): WebGLProgram {
 
   gl.uniform3f(lightDirLoc, 0.5, -1.0, 0.3);
   gl.uniform3f(ambientLoc, 0.3, 0.3, 0.3);
-  gl.uniform3f(fogColorLoc, 0.53, 0.81, 0.98);
+  gl.uniform3f(fogColorLoc, 0.4, 0.6, 0.8);
 
   return program;
 }
