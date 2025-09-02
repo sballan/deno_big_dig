@@ -14,6 +14,16 @@ been added, so you can add it to your own todo list
 
 ## Tasks
 
+- [x] Sometimes when I right click on a tile, a new tile isn't created...Do you
+      know why?
+- [x] The ground should block the sun when the sun goes under the scene
+
+### Lighting 2.0
+
+- [ ] Create a Sun - [ ] Sun can be seen in the sky - [ ] Game has a clock. A
+      day takes 1 minute. The sun orbits the entire scene once per minute
+- [ ] Sun casts shadows which are visible on the ground
+
 ## Archive
 
 ### Bugfixes

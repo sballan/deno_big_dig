@@ -23,6 +23,8 @@ export class Game {
   private selectedBlock: Vec3 | null = null;
   private onPauseCallback?: (paused: boolean) => void;
   private config: GameConfig;
+  private gameTime: number; // Time in seconds (0-60 for one day cycle)
+  private timeOfDay: number; // Normalized time (0-1)
 
   /**
    * Initializes the game engine with all required components
@@ -36,6 +38,8 @@ export class Game {
     this.controls = new Controls(canvas);
     this.player = new PlayerController(this.controls, { x: 0, y: 25, z: 0 });
     this.isPaused = false;
+    this.gameTime = 15; // Start at dawn (quarter way through the cycle)
+    this.timeOfDay = 0.25;
 
     // Set up pause callback
     this.controls.setOnPause(() => {
@@ -140,7 +144,15 @@ export class Game {
         );
         const selectedBlock = this.player.getSelectedBlockType();
 
-        if (selectedBlock !== null && !this.world.checkCollision(placePos)) {
+        // Check if the placement position would intersect with the player
+        const playerPos = this.player.player.position;
+        const blockWouldIntersectPlayer = 
+          Math.abs(placePos.x - playerPos.x) < 0.5 &&
+          Math.abs(placePos.z - playerPos.z) < 0.5 &&
+          placePos.y >= Math.floor(playerPos.y) &&
+          placePos.y <= Math.floor(playerPos.y + 1.8);
+
+        if (selectedBlock !== null && !blockWouldIntersectPlayer) {
           this.world.setBlock(
             placePos.x,
             placePos.y,
@@ -201,6 +213,13 @@ export class Game {
    * Handles player movement, world generation, and block selection highlighting
    */
   private update(deltaTime: number): void {
+    // Update game time (60 seconds = 1 day)
+    this.gameTime += deltaTime;
+    if (this.gameTime >= 60) {
+      this.gameTime -= 60;
+    }
+    this.timeOfDay = this.gameTime / 60;
+
     this.player.update(deltaTime, (pos) => this.world.checkCollision(pos));
 
     const playerCamera = this.player.getCamera();
@@ -238,6 +257,7 @@ export class Game {
     }
 
     this.renderer.renderChunks();
+    this.renderer.renderSun(this.timeOfDay);
   }
 
   /**
@@ -296,6 +316,8 @@ export class Game {
     this.config = config;
     this.world = new World(Date.now(), this.config);
     this.player = new PlayerController(this.controls, { x: 0, y: 25, z: 0 });
+    this.gameTime = 15; // Reset to dawn
+    this.timeOfDay = 0.25;
     this.world.generateAroundPosition(
       this.player.player.position,
       RENDER_DISTANCE,

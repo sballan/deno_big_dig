@@ -3,6 +3,7 @@ import { BlockType, Camera, Chunk, CHUNK_SIZE, Vec3 } from "../types.ts";
 import { createShaderProgram } from "./shaders.ts";
 import { BlockMesh } from "./mesh.ts";
 import { TextureAtlas } from "./texture.ts";
+import { Sun } from "./sun.ts";
 
 export class Renderer {
   private gl: WebGL2RenderingContext;
@@ -15,6 +16,7 @@ export class Renderer {
     { vao: WebGLVertexArrayObject; vertexCount: number }
   >;
   private textureAtlas: TextureAtlas;
+  private sun: Sun;
 
   /**
    * Initializes WebGL2 renderer with shader programs and mesh systems
@@ -32,6 +34,7 @@ export class Renderer {
     this.blockMesh = new BlockMesh(gl, this.shaderProgram);
     this.chunkMeshes = new Map();
     this.textureAtlas = new TextureAtlas(gl);
+    this.sun = new Sun(gl);
 
     this.setupGL();
   }
@@ -414,6 +417,13 @@ export class Renderer {
   }
 
   /**
+   * Renders the sun in the sky
+   */
+  renderSun(timeOfDay: number): void {
+    this.sun.render(this.projectionMatrix, this.viewMatrix, timeOfDay);
+  }
+
+  /**
    * Cleans up all WebGL resources
    */
   dispose(): void {
@@ -426,6 +436,7 @@ export class Renderer {
     this.chunkMeshes.clear();
     this.blockMesh.dispose();
     this.textureAtlas.dispose();
+    this.sun.dispose();
     gl.deleteProgram(this.shaderProgram);
   }
 }
