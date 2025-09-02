@@ -44,8 +44,9 @@ export class Renderer {
     const gl = this.gl;
 
     gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.BACK);
+    // Temporarily disable face culling to debug hollow block issue
+    // gl.enable(gl.CULL_FACE);
+    // gl.cullFace(gl.BACK);
 
     gl.clearColor(0.53, 0.81, 0.98, 1.0);
   }
@@ -259,13 +260,14 @@ export class Renderer {
     const nz = pos.z + normal[2];
 
     // For faces at chunk boundaries, we need to check adjacent chunks
-    // For now, assume chunk boundaries have air (this could be improved)
+    // For now, assume chunk boundaries have air and render all boundary faces
     if (
       nx < 0 || nx >= CHUNK_SIZE || ny < 0 || ny >= CHUNK_SIZE || nz < 0 ||
       nz >= CHUNK_SIZE
     ) {
-      // Only render top faces at chunk boundaries, and faces going into negative Y
-      return ny >= CHUNK_SIZE || (ny < 0 && normal[1] < 0);
+      // Render all faces at chunk boundaries for now
+      // TODO: Implement proper inter-chunk face culling
+      return true;
     }
 
     const index = nx + ny * CHUNK_SIZE + nz * CHUNK_SIZE * CHUNK_SIZE;

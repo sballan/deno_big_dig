@@ -141,10 +141,18 @@ export class World {
             chunk.blocks[trunkIndex] = BlockType.WOOD;
           }
 
-          if (worldY >= groundHeight + 2 && worldY < groundHeight + 6) {
-            for (let dx = -2; dx <= 2; dx++) {
-              for (let dz = -2; dz <= 2; dz++) {
-                if (Math.abs(dx) + Math.abs(dz) <= 3) {
+          // Generate leaves around the entire trunk height and above
+          if (worldY >= groundHeight + 1 && worldY < groundHeight + 6) {
+            // Create a more natural leaf pattern based on height
+            const leafRadius = worldY >= groundHeight + 4 ? 1 : 2; // Smaller radius at top
+
+            for (let dx = -leafRadius; dx <= leafRadius; dx++) {
+              for (let dz = -leafRadius; dz <= leafRadius; dz++) {
+                // Skip the center trunk position for leaves
+                if (dx === 0 && dz === 0) continue;
+
+                // Use Manhattan distance for more natural shape
+                if (Math.abs(dx) + Math.abs(dz) <= leafRadius + 1) {
                   const lx = treeX + dx;
                   const lz = treeZ + dz;
 
