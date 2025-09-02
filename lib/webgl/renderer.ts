@@ -44,9 +44,9 @@ export class Renderer {
     const gl = this.gl;
 
     gl.enable(gl.DEPTH_TEST);
-    // Temporarily disable face culling to debug hollow block issue
-    // gl.enable(gl.CULL_FACE);
-    // gl.cullFace(gl.BACK);
+    // Re-enable face culling with corrected vertex winding
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
 
     gl.clearColor(0.53, 0.81, 0.98, 1.0);
   }
@@ -197,28 +197,28 @@ export class Renderer {
     const faces = [
       {
         normal: [0, 1, 0],
-        vertices: [[0, 1, 0], [1, 1, 0], [1, 1, 1], [0, 1, 1]],
-      }, // top
+        vertices: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]],
+      }, // top - counter-clockwise when viewed from above
       {
         normal: [0, -1, 0],
-        vertices: [[0, 0, 0], [0, 0, 1], [1, 0, 1], [1, 0, 0]],
-      }, // bottom
+        vertices: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]],
+      }, // bottom - counter-clockwise when viewed from below
       {
         normal: [0, 0, 1],
-        vertices: [[0, 0, 1], [0, 1, 1], [1, 1, 1], [1, 0, 1]],
-      }, // front
+        vertices: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]],
+      }, // front - counter-clockwise when viewed from front
       {
         normal: [0, 0, -1],
-        vertices: [[1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 0]],
-      }, // back
+        vertices: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]],
+      }, // back - counter-clockwise when viewed from back
       {
         normal: [1, 0, 0],
-        vertices: [[1, 0, 0], [1, 0, 1], [1, 1, 1], [1, 1, 0]],
-      }, // right
+        vertices: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]],
+      }, // right - counter-clockwise when viewed from right
       {
         normal: [-1, 0, 0],
-        vertices: [[0, 0, 1], [0, 0, 0], [0, 1, 0], [0, 1, 1]],
-      }, // left
+        vertices: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]],
+      }, // left - counter-clockwise when viewed from left
     ];
 
     const textureCoords = this.getTextureCoords(blockType);
