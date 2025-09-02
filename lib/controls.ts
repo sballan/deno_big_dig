@@ -6,6 +6,7 @@ export class Controls {
   private mouseDown: boolean;
   private pointerLocked: boolean;
   private canvas: HTMLCanvasElement;
+  private onPauseCallback?: () => void;
 
   /**
    * Sets up keyboard and mouse input handling for the game
@@ -26,6 +27,17 @@ export class Controls {
    */
   private setupEventListeners(): void {
     document.addEventListener("keydown", (e) => {
+      // Handle ESC for pause
+      if (e.code === "Escape") {
+        e.preventDefault();
+        // Always call pause callback first, then release pointer lock
+        if (this.onPauseCallback) {
+          this.onPauseCallback();
+        }
+        // Pointer lock will be released by the game's pause handler
+        return;
+      }
+
       this.keys.add(e.code);
 
       if (e.code === "Tab") {
@@ -129,6 +141,31 @@ export class Controls {
   /**
    * Cleans up event listeners and releases pointer lock
    */
+  /**
+   * Requests pointer lock for the canvas
+   */
+  requestPointerLock(): void {
+    if (!this.pointerLocked) {
+      this.canvas.requestPointerLock();
+    }
+  }
+
+  /**
+   * Releases pointer lock
+   */
+  releasePointerLock(): void {
+    if (this.pointerLocked) {
+      document.exitPointerLock();
+    }
+  }
+
+  /**
+   * Sets the callback to be called when pause is triggered
+   */
+  setOnPause(callback: () => void): void {
+    this.onPauseCallback = callback;
+  }
+
   dispose(): void {
     this.keys.clear();
     if (this.pointerLocked) {

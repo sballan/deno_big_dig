@@ -1,15 +1,18 @@
 import { BlockType, Chunk, CHUNK_SIZE, Vec3, WORLD_HEIGHT } from "./types.ts";
+import type { GameConfig } from "./game.ts";
 
 export class World {
   private chunks: Map<string, Chunk>;
   private seed: number;
+  private config: GameConfig;
 
   /**
    * Creates a new world with optional seed for terrain generation
    */
-  constructor(seed: number = Date.now()) {
+  constructor(seed: number = Date.now(), config?: GameConfig) {
     this.chunks = new Map();
     this.seed = seed;
+    this.config = config || { flatness: 0.5, treeFrequency: 0.02 };
   }
 
   /**
@@ -71,11 +74,19 @@ export class World {
   /**
    * Calculates terrain height at a given x,z coordinate using noise functions
    * Combines multiple octaves for more natural terrain
+   * Flatness parameter controls terrain variation (1 = flat, 0 = maximum variation)
    */
   private getTerrainHeight(x: number, z: number): number {
-    const scale = 0.02;
-    const amplitude = 3;
     const baseHeight = 20;
+
+    // If perfectly flat, return constant height
+    if (this.config.flatness >= 1) {
+      return baseHeight;
+    }
+
+    const scale = 0.02;
+    // Reduce amplitude based on flatness (1 = no variation, 0 = full variation)
+    const amplitude = 3 * (1 - this.config.flatness);
 
     const noise = this.noise2D(x * scale, z * scale);
     const octave1 = this.noise2D(x * scale * 2, z * scale * 2) * 0.3;
@@ -97,6 +108,7 @@ export class World {
   /**
    * Randomly generates trees within a chunk
    * Trees consist of wood trunk and leaf blocks
+   * Tree frequency parameter controls likelihood of trees (0 = no trees, 1 = maximum trees)
    */
   private generateTrees(
     chunk: Chunk,
@@ -106,7 +118,8 @@ export class World {
   ): void {
     const random = this.random(chunkX * 1000 + chunkZ);
 
-    if (random < 0.02) {
+    // Use config tree frequency (0 = no trees, 1 = maximum frequency)
+    if (random < this.config.treeFrequency) {
       const treeX = Math.floor(this.random(chunkX * 100) * (CHUNK_SIZE - 4)) +
         2;
       const treeZ = Math.floor(this.random(chunkZ * 100) * (CHUNK_SIZE - 4)) +

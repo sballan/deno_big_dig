@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { Game } from "../lib/game.ts";
+import { Game, GameConfig } from "../lib/game.ts";
 import { BlockType } from "../lib/types.ts";
 
 export default function GameComponent() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
   const [selectedSlot, setSelectedSlot] = useState(0);
+  const [isPaused, setIsPaused] = useState(true); // Start paused
+  const [showConfig, setShowConfig] = useState(false);
+  const [config, setConfig] = useState<GameConfig>({
+    flatness: 0.5,
+    treeFrequency: 0.02,
+  });
+  const [tempConfig, setTempConfig] = useState<GameConfig>({
+    flatness: 0.5,
+    treeFrequency: 0.02,
+  });
 
   const inventory = [
     { name: "Stone", type: BlockType.STONE },
@@ -18,9 +28,17 @@ export default function GameComponent() {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const game = new Game(canvasRef.current);
+    const game = new Game(canvasRef.current, config);
     gameRef.current = game;
+
+    // Set up pause callback
+    game.setOnPauseChange((paused) => {
+      setIsPaused(paused);
+    });
+
     game.start();
+    // Start the game in paused state
+    game.setPaused(true);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const num = parseInt(e.key);
@@ -31,6 +49,8 @@ export default function GameComponent() {
       }
     };
 
+    // Remove pointer lock monitoring since we don't need click-to-start anymore
+
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
@@ -39,16 +59,40 @@ export default function GameComponent() {
     };
   }, []);
 
+  const handleResume = () => {
+    if (gameRef.current) {
+      gameRef.current.resume();
+    }
+    setShowConfig(false);
+  };
+
+  const handleNewGame = () => {
+    setTempConfig({ ...config });
+    setShowConfig(true);
+  };
+
+  const handleCreateNewGame = () => {
+    setConfig(tempConfig);
+    if (gameRef.current) {
+      gameRef.current.resetWithConfig(tempConfig);
+    }
+    setShowConfig(false);
+    setIsPaused(false);
+  };
+
+  const handleCancelConfig = () => {
+    setShowConfig(false);
+  };
+
   return (
     <div class="game-container">
       <canvas ref={canvasRef} class="game-canvas" />
-      <div class="game-ui">
+
+      {/* Game UI (hidden when paused) */}
+      <div class={`game-ui ${isPaused ? "hidden" : ""}`}>
         <div class="controls-help">
           <h3>Controls</h3>
           <ul>
-            <li>
-              <strong>Click canvas</strong> - Lock pointer
-            </li>
             <li>
               <strong>WASD</strong> - Move
             </li>
@@ -68,7 +112,7 @@ export default function GameComponent() {
               <strong>Right Click</strong> - Place block
             </li>
             <li>
-              <strong>ESC</strong> - Release pointer
+              <strong>ESC</strong> - Pause
             </li>
           </ul>
         </div>
@@ -93,6 +137,108 @@ export default function GameComponent() {
           </div>
         </div>
       </div>
+
+      {/* Pause Screen */}
+      {isPaused && !showConfig && (
+        <div class="pause-screen">
+          <div class="pause-content">
+            <h1>PAUSED</h1>
+            <button type="button" class="pause-button" onClick={handleResume}>
+              Resume
+            </button>
+            <button type="button" class="pause-button" onClick={handleNewGame}>
+              Create New Game
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Configuration Dialog */}
+      {showConfig && (
+        <div class="config-screen">
+          <div class="config-content">
+            <h2>New Game Configuration</h2>
+
+            <div class="config-option">
+              <label>
+                <span class="config-label">Terrain Flatness</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={tempConfig.flatness}
+                  onInput={(e) =>
+                    setTempConfig({
+                      ...tempConfig,
+                      flatness: parseFloat(
+                        (e.target as HTMLInputElement).value,
+                      ),
+                    })}
+                />
+                <span class="config-value">
+                  {tempConfig.flatness === 1
+                    ? "Perfectly Flat"
+                    : tempConfig.flatness === 0
+                    ? "Maximum Variation"
+                    : `${Math.round(tempConfig.flatness * 100)}% Flat`}
+                </span>
+              </label>
+              <div class="config-help">
+                1 = perfectly flat terrain, 0 = maximum hills and valleys
+              </div>
+            </div>
+
+            <div class="config-option">
+              <label>
+                <span class="config-label">Tree Frequency</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="0.2"
+                  step="0.01"
+                  value={tempConfig.treeFrequency}
+                  onInput={(e) =>
+                    setTempConfig({
+                      ...tempConfig,
+                      treeFrequency: parseFloat(
+                        (e.target as HTMLInputElement).value,
+                      ),
+                    })}
+                />
+                <span class="config-value">
+                  {tempConfig.treeFrequency === 0
+                    ? "No Trees"
+                    : tempConfig.treeFrequency >= 0.2
+                    ? "Dense Forest"
+                    : `${Math.round(tempConfig.treeFrequency * 500)}% Chance`}
+                </span>
+              </label>
+              <div class="config-help">
+                0 = no trees, higher values = more trees
+              </div>
+            </div>
+
+            <div class="config-buttons">
+              <button
+                type="button"
+                class="config-button primary"
+                onClick={handleCreateNewGame}
+              >
+                Create World
+              </button>
+              <button
+                type="button"
+                class="config-button"
+                onClick={handleCancelConfig}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>
         {`
         .game-container {
@@ -117,6 +263,11 @@ export default function GameComponent() {
           right: 0;
           bottom: 0;
           pointer-events: none;
+          transition: opacity 0.3s;
+        }
+        
+        .game-ui.hidden {
+          opacity: 0;
         }
         
         .controls-help {
@@ -203,6 +354,180 @@ export default function GameComponent() {
         .slot-name {
           font-size: 11px;
         }
+
+        /* Pause Screen Styles */
+        .pause-screen {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .pause-content {
+          background: rgba(20, 20, 20, 0.95);
+          padding: 40px;
+          border-radius: 10px;
+          text-align: center;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .pause-content h1 {
+          color: white;
+          margin: 0 0 30px 0;
+          font-size: 48px;
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .pause-button {
+          display: block;
+          width: 200px;
+          margin: 10px auto;
+          padding: 15px 30px;
+          background: rgba(50, 50, 50, 0.9);
+          color: white;
+          border: 2px solid #666;
+          border-radius: 5px;
+          font-size: 18px;
+          font-family: monospace;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .pause-button:hover {
+          background: rgba(70, 70, 70, 0.9);
+          border-color: #0f0;
+          transform: scale(1.05);
+        }
+
+        /* Configuration Screen Styles */
+        .config-screen {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1001;
+        }
+
+        .config-content {
+          background: rgba(30, 30, 30, 0.98);
+          padding: 40px;
+          border-radius: 10px;
+          width: 500px;
+          max-width: 90vw;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .config-content h2 {
+          color: white;
+          margin: 0 0 30px 0;
+          font-size: 32px;
+          text-align: center;
+        }
+
+        .config-option {
+          margin: 25px 0;
+        }
+
+        .config-option label {
+          display: block;
+          color: white;
+        }
+
+        .config-label {
+          display: block;
+          margin-bottom: 10px;
+          font-size: 18px;
+          font-weight: bold;
+        }
+
+        .config-option input[type="range"] {
+          width: 100%;
+          margin: 10px 0;
+          height: 8px;
+          background: rgba(100, 100, 100, 0.5);
+          border-radius: 4px;
+          outline: none;
+          -webkit-appearance: none;
+        }
+
+        .config-option input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          background: #0f0;
+          border-radius: 50%;
+          cursor: pointer;
+        }
+
+        .config-option input[type="range"]::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          background: #0f0;
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+        }
+
+        .config-value {
+          display: block;
+          text-align: center;
+          color: #0f0;
+          font-size: 14px;
+          margin-top: 5px;
+        }
+
+        .config-help {
+          color: #888;
+          font-size: 12px;
+          margin-top: 5px;
+          text-align: center;
+        }
+
+        .config-buttons {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+          margin-top: 30px;
+        }
+
+        .config-button {
+          padding: 12px 24px;
+          background: rgba(50, 50, 50, 0.9);
+          color: white;
+          border: 2px solid #666;
+          border-radius: 5px;
+          font-size: 16px;
+          font-family: monospace;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .config-button.primary {
+          background: rgba(0, 100, 0, 0.7);
+          border-color: #0f0;
+        }
+
+        .config-button:hover {
+          transform: scale(1.05);
+          background: rgba(70, 70, 70, 0.9);
+        }
+
+        .config-button.primary:hover {
+          background: rgba(0, 150, 0, 0.7);
+        }
+
       `}
       </style>
     </div>

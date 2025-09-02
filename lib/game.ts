@@ -5,6 +5,11 @@ import { Controls } from "./controls.ts";
 import { Raycaster } from "./raycaster.ts";
 import { BlockType, Camera, RENDER_DISTANCE, Vec3 } from "./types.ts";
 
+export interface GameConfig {
+  flatness: number; // 0 to 1, where 1 is perfectly flat
+  treeFrequency: number; // 0 to 1, likelihood of trees
+}
+
 export class Game {
   private canvas: HTMLCanvasElement;
   private renderer: Renderer;
@@ -14,18 +19,28 @@ export class Game {
   private camera: Camera;
   private lastTime: number;
   private isRunning: boolean;
+  private isPaused: boolean;
   private selectedBlock: Vec3 | null = null;
+  private onPauseCallback?: (paused: boolean) => void;
+  private config: GameConfig;
 
   /**
    * Initializes the game engine with all required components
    * Sets up renderer, world generation, player controls, and camera
    */
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, config?: GameConfig) {
     this.canvas = canvas;
     this.renderer = new Renderer(canvas);
-    this.world = new World();
+    this.config = config || { flatness: 0.5, treeFrequency: 0.02 };
+    this.world = new World(Date.now(), this.config);
     this.controls = new Controls(canvas);
     this.player = new PlayerController(this.controls, { x: 0, y: 25, z: 0 });
+    this.isPaused = false;
+
+    // Set up pause callback
+    this.controls.setOnPause(() => {
+      this.togglePause();
+    });
 
     this.camera = {
       position: { x: 0, y: 25, z: 0 },
@@ -165,7 +180,10 @@ export class Game {
     const deltaTime = Math.min((currentTime - this.lastTime) / 1000, 0.1);
     this.lastTime = currentTime;
 
-    this.update(deltaTime);
+    // Only update if not paused
+    if (!this.isPaused) {
+      this.update(deltaTime);
+    }
     this.render();
 
     requestAnimationFrame(this.gameLoop);
@@ -220,6 +238,62 @@ export class Game {
    */
   setSelectedBlock(blockType: BlockType): void {
     this.player.setSelectedBlock(blockType);
+  }
+
+  /**
+   * Toggles pause state
+   */
+  togglePause(): void {
+    this.isPaused = !this.isPaused;
+    // Release pointer lock when pausing
+    if (this.isPaused && this.controls.isPointerLocked()) {
+      this.controls.releasePointerLock();
+    }
+    if (this.onPauseCallback) {
+      this.onPauseCallback(this.isPaused);
+    }
+  }
+
+  /**
+   * Sets pause state
+   */
+  setPaused(paused: boolean): void {
+    this.isPaused = paused;
+    if (this.onPauseCallback) {
+      this.onPauseCallback(this.isPaused);
+    }
+  }
+
+  /**
+   * Resumes the game and re-captures mouse
+   */
+  resume(): void {
+    this.isPaused = false;
+    this.controls.requestPointerLock();
+    if (this.onPauseCallback) {
+      this.onPauseCallback(false);
+    }
+  }
+
+  /**
+   * Sets the callback for pause state changes
+   */
+  setOnPauseChange(callback: (paused: boolean) => void): void {
+    this.onPauseCallback = callback;
+  }
+
+  /**
+   * Resets the game with new configuration
+   */
+  resetWithConfig(config: GameConfig): void {
+    this.config = config;
+    this.world = new World(Date.now(), this.config);
+    this.player = new PlayerController(this.controls, { x: 0, y: 25, z: 0 });
+    this.world.generateAroundPosition(
+      this.player.player.position,
+      RENDER_DISTANCE,
+    );
+    this.resume();
   }
 
   /**
