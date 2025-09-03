@@ -53,12 +53,12 @@ export class Mat4 {
     const mat = new Mat4();
 
     const zAxis = normalize(subtract(eye, center));
-    
+
     // Check if view direction is parallel to up vector (looking straight up/down)
     const dotUpZ = Math.abs(dot(up, zAxis));
     let xAxis: Vec3;
     let yAxis: Vec3;
-    
+
     if (dotUpZ > 0.999) {
       // View direction is nearly parallel to up, use a different reference vector
       const altUp = { x: 0, y: 0, z: 1 };

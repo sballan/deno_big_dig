@@ -117,7 +117,7 @@ export class Game {
     // Handle right-click for block placement
     this.canvas.addEventListener("mousedown", (e) => {
       if (e.button !== 2) return; // Only handle right-click (button 2)
-      
+
       e.preventDefault();
       if (!this.controls.isPointerLocked()) return;
 
@@ -146,7 +146,7 @@ export class Game {
 
         // Check if the placement position would intersect with the player
         const playerPos = this.player.player.position;
-        const blockWouldIntersectPlayer = 
+        const blockWouldIntersectPlayer =
           Math.abs(placePos.x - playerPos.x) < 0.5 &&
           Math.abs(placePos.z - playerPos.z) < 0.5 &&
           placePos.y >= Math.floor(playerPos.y) &&

@@ -102,10 +102,13 @@ Custom 3D graphics pipeline:
 
 1. **Test the web server** - Always curl the server to ensure no runtime errors:
    ```bash
-   # Start the server
+   # Check whether it is already running
+   curl http://localhost:8000
+
+   # If it fails, start the server, and try again
    deno task start
 
-   # In another terminal, test the endpoint
+   # And another terminal, test the endpoint again
    curl http://localhost:8000
    ```
 

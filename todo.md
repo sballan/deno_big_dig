@@ -14,19 +14,17 @@ been added, so you can add it to your own todo list
 
 ## Tasks
 
-- [x] Sometimes when I right click on a tile, a new tile isn't created...Do you
-      know why?
-- [x] The ground should block the sun when the sun goes under the scene
-
 ### Lighting 2.0
 
-- [ ] Create a Sun - [ ] Sun can be seen in the sky - [ ] Game has a clock. A
-      day takes 1 minute. The sun orbits the entire scene once per minute
 - [ ] Sun casts shadows which are visible on the ground
 
 ## Archive
 
 ### Bugfixes
+
+- [x] Sometimes when I right click on a tile, a new tile isn't created...Do you
+      know why?
+- [x] The ground should block the sun when the sun goes under the scene
 
 - [x] I can see that the tree has a hollow look to it, somehow it's not
       rendering correctly. Can you examine the code and figure out what this is?
@@ -38,6 +36,13 @@ been added, so you can add it to your own todo list
 - [x] The default world flatness should be 100%
 - [x] When I look directly down, the whole screen turns very bright blue, almost
       white
+
+### Lighting 2.0
+
+- [x] Create a Sun
+- [x] Sun can be seen in the sky
+- [x] Game has a clock. A day takes 1 minute. The sun orbits the entire scene
+      once per minute
 
 ### Create New Game
 

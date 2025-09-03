@@ -95,7 +95,7 @@ export default function GameComponent() {
           <div class="crosshair-horizontal"></div>
           <div class="crosshair-vertical"></div>
         </div>
-        
+
         <div class="controls-help">
           <h3>Controls</h3>
           <ul>

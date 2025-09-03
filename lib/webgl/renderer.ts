@@ -4,6 +4,7 @@ import { createShaderProgram } from "./shaders.ts";
 import { BlockMesh } from "./mesh.ts";
 import { TextureAtlas } from "./texture.ts";
 import { Sun } from "./sun.ts";
+import { Stars } from "./stars.ts";
 
 export class Renderer {
   private gl: WebGL2RenderingContext;
@@ -17,6 +18,7 @@ export class Renderer {
   >;
   private textureAtlas: TextureAtlas;
   private sun: Sun;
+  private stars: Stars;
 
   /**
    * Initializes WebGL2 renderer with shader programs and mesh systems
@@ -35,6 +37,7 @@ export class Renderer {
     this.chunkMeshes = new Map();
     this.textureAtlas = new TextureAtlas(gl);
     this.sun = new Sun(gl);
+    this.stars = new Stars(gl);
 
     this.setupGL();
   }
@@ -420,6 +423,111 @@ export class Renderer {
    * Renders the sun in the sky
    */
   renderSun(timeOfDay: number): void {
+    // Update lighting direction based on sun position
+    const sunPos = this.sun.getSunPosition(timeOfDay);
+    const sunDir = {
+      x: -sunPos.x,
+      y: -sunPos.y,
+      z: -sunPos.z,
+    };
+    const length = Math.sqrt(
+      sunDir.x * sunDir.x + sunDir.y * sunDir.y + sunDir.z * sunDir.z,
+    );
+    sunDir.x /= length;
+    sunDir.y /= length;
+    sunDir.z /= length;
+
+    // Calculate sun's vertical position for smooth transitions
+    const sunAngle = timeOfDay * Math.PI * 2;
+    const sunHeight = Math.sin(sunAngle); // -1 (midnight) to 1 (noon)
+
+    // Calculate ambient light and sky color with smooth transitions
+    let ambientIntensity: number;
+    let skyColor: { r: number; g: number; b: number };
+    let diffuseIntensity: number;
+
+    if (sunHeight < -0.2) {
+      // Full night (sun well below horizon)
+      ambientIntensity = 0.05;
+      diffuseIntensity = 0.0;
+      skyColor = { r: 0.02, g: 0.02, b: 0.08 }; // Very dark blue night sky
+    } else if (sunHeight < 0.0) {
+      // Sunset/sunrise transition (sun just below horizon)
+      const t = (sunHeight + 0.2) / 0.2; // 0 to 1 as sun approaches horizon
+      ambientIntensity = 0.05 + t * 0.15;
+      diffuseIntensity = t * 0.3;
+      // Gradient from night to sunset colors
+      skyColor = {
+        r: 0.02 + t * 0.48,
+        g: 0.02 + t * 0.28,
+        b: 0.08 + t * 0.22,
+      };
+    } else if (sunHeight < 0.2) {
+      // Dawn/dusk (sun near horizon)
+      const t = sunHeight / 0.2; // 0 to 1 as sun rises
+      ambientIntensity = 0.2 + t * 0.1;
+      diffuseIntensity = 0.3 + t * 0.3;
+      // Gradient from sunset to morning colors
+      skyColor = {
+        r: 0.5 - t * 0.2,
+        g: 0.3 + t * 0.2,
+        b: 0.3 + t * 0.4,
+      };
+    } else {
+      // Full day (sun well above horizon)
+      ambientIntensity = 0.3;
+      diffuseIntensity = 0.6 + sunHeight * 0.2; // Brightest at noon
+      skyColor = { r: 0.3, g: 0.5, b: 0.7 }; // Blue day sky
+    }
+
+    // Update sky/fog color
+    this.gl.clearColor(skyColor.r, skyColor.g, skyColor.b, 1.0);
+
+    // Update the light direction, ambient, and fog uniforms in the main shader
+    this.gl.useProgram(this.shaderProgram);
+    const lightDirLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uLightDirection",
+    );
+    const ambientLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uAmbientLight",
+    );
+    const fogColorLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uFogColor",
+    );
+    const diffuseLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uDiffuseIntensity",
+    );
+
+    this.gl.uniform3f(lightDirLoc, sunDir.x, sunDir.y, sunDir.z);
+    this.gl.uniform3f(
+      ambientLoc,
+      ambientIntensity,
+      ambientIntensity,
+      ambientIntensity * 1.1,
+    );
+    this.gl.uniform3f(fogColorLoc, skyColor.r, skyColor.g, skyColor.b);
+    this.gl.uniform1f(diffuseLoc, diffuseIntensity);
+
+    // Calculate star visibility based on sun height
+    let starVisibility = 0.0;
+    if (sunHeight < -0.1) {
+      // Stars fully visible when sun is well below horizon
+      starVisibility = 1.0;
+    } else if (sunHeight < 0.1) {
+      // Stars fade in/out near horizon
+      starVisibility = 1.0 - ((sunHeight + 0.1) / 0.2);
+    }
+
+    // Render stars first (behind everything)
+    if (starVisibility > 0) {
+      this.stars.render(this.projectionMatrix, this.viewMatrix, starVisibility);
+    }
+
+    // Render the sun itself
     this.sun.render(this.projectionMatrix, this.viewMatrix, timeOfDay);
   }
 
@@ -437,6 +545,7 @@ export class Renderer {
     this.blockMesh.dispose();
     this.textureAtlas.dispose();
     this.sun.dispose();
+    this.stars.dispose();
     gl.deleteProgram(this.shaderProgram);
   }
 }
