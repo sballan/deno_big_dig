@@ -512,17 +512,19 @@ export class Renderer {
     this.gl.uniform3f(fogColorLoc, skyColor.r, skyColor.g, skyColor.b);
     this.gl.uniform1f(diffuseLoc, diffuseIntensity);
 
-    // Calculate star visibility based on sun height
+    // Calculate star visibility based on actual sun position
+    const actualSunPos = this.sun.getSunPosition(timeOfDay);
     let starVisibility = 0.0;
-    if (sunHeight < -0.1) {
-      // Stars fully visible when sun is well below horizon
+    
+    if (actualSunPos.y < 5) {
+      // Stars fully visible when sun is below horizon
       starVisibility = 1.0;
-    } else if (sunHeight < 0.1) {
-      // Stars fade in/out near horizon
-      starVisibility = 1.0 - ((sunHeight + 0.1) / 0.2);
+    } else if (actualSunPos.y < 15) {
+      // Stars fade out as sun rises above horizon
+      starVisibility = 1.0 - ((actualSunPos.y - 5) / 10);
     }
 
-    // Render stars first (behind everything)
+    // Render stars first (behind everything) only when sun is down
     if (starVisibility > 0) {
       this.stars.render(this.projectionMatrix, this.viewMatrix, starVisibility);
     }

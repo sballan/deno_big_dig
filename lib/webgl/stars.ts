@@ -37,8 +37,10 @@ export class Stars {
       viewNoTranslation[3][1] = 0.0;
       viewNoTranslation[3][2] = 0.0;
       
-      gl_Position = uProjectionMatrix * viewNoTranslation * vec4(aPosition, 1.0);
-      gl_PointSize = 2.0;
+      vec4 position = uProjectionMatrix * viewNoTranslation * vec4(aPosition, 1.0);
+      // Force stars to render at the far clipping plane to avoid depth conflicts
+      gl_Position = vec4(position.xy, position.w * 0.9999, position.w);
+      gl_PointSize = 6.0;  // Reasonable star size
       vBrightness = aBrightness;
     }`;
 
@@ -59,10 +61,12 @@ export class Stars {
       // Soft edges for stars
       float alpha = 1.0 - smoothstep(0.1, 0.5, dist);
       
-      // Star color (slightly blue-white)
-      vec3 starColor = mix(vec3(0.8, 0.9, 1.0), vec3(1.0, 1.0, 0.9), vBrightness);
+      // Star color (brighter blue-white)
+      vec3 starColor = mix(vec3(0.9, 0.95, 1.0), vec3(1.0, 1.0, 0.95), vBrightness);
       
-      fragColor = vec4(starColor, alpha * vBrightness * uVisibility);
+      // Stars with reasonable brightness
+      float finalAlpha = alpha * vBrightness * uVisibility * 1.0;
+      fragColor = vec4(starColor, finalAlpha);
     }`;
 
     const vertexShader = this.compileShader(
@@ -109,7 +113,7 @@ export class Stars {
     // Generate random stars on a sphere
     const numStars = 1000;
     const vertices: number[] = [];
-    const radius = 500; // Far away
+    const radius = 200; // Closer for better visibility
 
     for (let i = 0; i < numStars; i++) {
       // Random spherical coordinates
@@ -124,8 +128,8 @@ export class Stars {
       // Position (x, y, z)
       vertices.push(x, y, z);
 
-      // Brightness (random between 0.3 and 1.0)
-      vertices.push(0.3 + Math.random() * 0.7);
+      // Brightness (random between 0.7 and 1.0 for better visibility)
+      vertices.push(0.7 + Math.random() * 0.3);
     }
 
     this.starCount = numStars;
@@ -177,9 +181,9 @@ export class Stars {
     this.gl.uniformMatrix4fv(viewLoc, false, viewMatrix.data);
     this.gl.uniform1f(visibilityLoc, visibility);
 
-    // Enable blending for star transparency
+    // Enable blending for star transparency with additive effect
     this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
     // Disable depth writing (stars are background)
     this.gl.depthMask(false);
