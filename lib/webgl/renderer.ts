@@ -5,6 +5,7 @@ import { BlockMesh } from "./mesh.ts";
 import { TextureAtlas } from "./texture.ts";
 import { Sun } from "./sun.ts";
 import { Stars } from "./stars.ts";
+import { Moon } from "./moon.ts";
 
 export class Renderer {
   private gl: WebGL2RenderingContext;
@@ -19,6 +20,7 @@ export class Renderer {
   private textureAtlas: TextureAtlas;
   private sun: Sun;
   private stars: Stars;
+  private moon: Moon;
 
   /**
    * Initializes WebGL2 renderer with shader programs and mesh systems
@@ -38,6 +40,7 @@ export class Renderer {
     this.textureAtlas = new TextureAtlas(gl);
     this.sun = new Sun(gl);
     this.stars = new Stars(gl);
+    this.moon = new Moon(gl);
 
     this.setupGL();
   }
@@ -483,11 +486,18 @@ export class Renderer {
     // Update sky/fog color
     this.gl.clearColor(skyColor.r, skyColor.g, skyColor.b, 1.0);
 
-    // Update the light direction, ambient, and fog uniforms in the main shader
+    // Get moon lighting information
+    const moonLight = this.moon.getMoonLight(timeOfDay);
+
+    // Update all lighting uniforms in the main shader
     this.gl.useProgram(this.shaderProgram);
     const lightDirLoc = this.gl.getUniformLocation(
       this.shaderProgram,
       "uLightDirection",
+    );
+    const moonDirLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uMoonDirection",
     );
     const ambientLoc = this.gl.getUniformLocation(
       this.shaderProgram,
@@ -501,8 +511,25 @@ export class Renderer {
       this.shaderProgram,
       "uDiffuseIntensity",
     );
+    const moonIntensityLoc = this.gl.getUniformLocation(
+      this.shaderProgram,
+      "uMoonIntensity",
+    );
 
+    // Set sun lighting
     this.gl.uniform3f(lightDirLoc, sunDir.x, sunDir.y, sunDir.z);
+    this.gl.uniform1f(diffuseLoc, diffuseIntensity);
+
+    // Set moon lighting
+    this.gl.uniform3f(
+      moonDirLoc,
+      moonLight.direction.x,
+      moonLight.direction.y,
+      moonLight.direction.z,
+    );
+    this.gl.uniform1f(moonIntensityLoc, moonLight.intensity);
+
+    // Set ambient and fog
     this.gl.uniform3f(
       ambientLoc,
       ambientIntensity,
@@ -510,12 +537,11 @@ export class Renderer {
       ambientIntensity * 1.1,
     );
     this.gl.uniform3f(fogColorLoc, skyColor.r, skyColor.g, skyColor.b);
-    this.gl.uniform1f(diffuseLoc, diffuseIntensity);
 
     // Calculate star visibility based on actual sun position
     const actualSunPos = this.sun.getSunPosition(timeOfDay);
     let starVisibility = 0.0;
-    
+
     if (actualSunPos.y < 5) {
       // Stars fully visible when sun is below horizon
       starVisibility = 1.0;
@@ -531,6 +557,9 @@ export class Renderer {
 
     // Render the sun itself
     this.sun.render(this.projectionMatrix, this.viewMatrix, timeOfDay);
+
+    // Render the moon
+    this.moon.render(this.projectionMatrix, this.viewMatrix, timeOfDay);
   }
 
   /**
@@ -548,6 +577,7 @@ export class Renderer {
     this.textureAtlas.dispose();
     this.sun.dispose();
     this.stars.dispose();
+    this.moon.dispose();
     gl.deleteProgram(this.shaderProgram);
   }
 }

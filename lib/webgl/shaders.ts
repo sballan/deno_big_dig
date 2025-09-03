@@ -107,9 +107,11 @@ uniform sampler2D uTexture;      // 2D texture atlas containing all block textur
 
 // LIGHTING UNIFORMS
 uniform vec3 uLightDirection;    // Direction of the sun/main light source
+uniform vec3 uMoonDirection;     // Direction of the moon light source
 uniform vec3 uAmbientLight;      // Minimum light level (prevents pure black shadows)
 uniform vec3 uFogColor;          // Sky/fog color for distance blending
 uniform float uDiffuseIntensity; // Intensity multiplier for directional light
+uniform float uMoonIntensity;    // Intensity multiplier for moon light
 
 void main() {
     // STEP 1: Normalize the interpolated normal vector
@@ -121,17 +123,18 @@ void main() {
     vec4 texColor = texture(uTexture, vTexCoord);
     
     // STEP 3: Calculate diffuse lighting using Lambert's cosine law
-    // Normalize light direction to ensure it's a unit vector
+    // Sun lighting
     vec3 lightDir = normalize(uLightDirection);
-    // Dot product gives cosine of angle between normal and light
-    // max() ensures we don't get negative light (surfaces facing away)
-    // Multiply by intensity uniform for adjustable brightness
-    float diffuse = max(dot(normal, lightDir), 0.0) * uDiffuseIntensity;
+    float sunDiffuse = max(dot(normal, lightDir), 0.0) * uDiffuseIntensity;
     
-    // STEP 4: Combine ambient and diffuse lighting
+    // Moon lighting
+    vec3 moonDir = normalize(uMoonDirection);
+    float moonDiffuse = max(dot(normal, moonDir), 0.0) * uMoonIntensity;
+    
+    // STEP 4: Combine ambient, sun, and moon lighting
     // Ambient: constant minimum light everywhere (simulates indirect lighting)
-    // Diffuse: directional light contribution
-    vec3 lighting = uAmbientLight + diffuse * vec3(1.0);
+    // Sun and moon: directional light contributions
+    vec3 lighting = uAmbientLight + (sunDiffuse + moonDiffuse) * vec3(1.0);
     
     // STEP 5: Apply lighting to the texture color
     // Component-wise multiplication modulates the texture by light intensity
@@ -202,19 +205,25 @@ export function createShaderProgram(gl: WebGL2RenderingContext): WebGLProgram {
 
   // STEP 9: Get locations of uniform variables for setting values
   const lightDirLoc = gl.getUniformLocation(program, "uLightDirection");
+  const moonDirLoc = gl.getUniformLocation(program, "uMoonDirection");
   const ambientLoc = gl.getUniformLocation(program, "uAmbientLight");
   const fogColorLoc = gl.getUniformLocation(program, "uFogColor");
   const diffuseLoc = gl.getUniformLocation(program, "uDiffuseIntensity");
+  const moonIntensityLoc = gl.getUniformLocation(program, "uMoonIntensity");
 
   // STEP 10: Set default uniform values for lighting and atmosphere
   // Light direction: pointing down-right (simulates sun angle)
   gl.uniform3f(lightDirLoc, 0.5, -1.0, 0.3);
+  // Moon direction: initially same as sun (will be updated dynamically)
+  gl.uniform3f(moonDirLoc, 0.5, -1.0, 0.3);
   // Ambient light: 30% gray (prevents complete darkness)
   gl.uniform3f(ambientLoc, 0.3, 0.3, 0.3);
   // Fog color: light blue (sky color for distance blending)
   gl.uniform3f(fogColorLoc, 0.4, 0.6, 0.8);
   // Diffuse intensity: 80% strength for directional light
   gl.uniform1f(diffuseLoc, 0.8);
+  // Moon intensity: initially 0 (no moon light)
+  gl.uniform1f(moonIntensityLoc, 0.0);
 
   return program;
 }
